@@ -1,0 +1,9 @@
+prefix=/home/aduzha01/bionic-toolchain-x86_64/sysroot/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+ 
+Name: RandrProto
+Description: Randr extension headers
+Version: 1.5.0
+Cflags: -I${includedir}
