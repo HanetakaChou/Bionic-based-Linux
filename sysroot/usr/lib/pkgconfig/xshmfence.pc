@@ -1,0 +1,11 @@
+prefix=/home/aduzha01/bionic-toolchain-x86_64/sysroot/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: xshmfence
+Description: The X Shared Memory Fence Library
+Version: 1.3
+Cflags: -I${includedir} -I/home/aduzha01/bionic-toolchain-x86_64/sysroot/usr/include 
+Libs: -L${libdir} -lxshmfence
+Libs.private: 
