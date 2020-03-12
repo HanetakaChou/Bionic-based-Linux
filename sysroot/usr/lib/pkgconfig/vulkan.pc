@@ -1,0 +1,12 @@
+prefix=/home/aduzha01/bionic-toolchain-x86_64/sysroot/usr
+exec_prefix=/home/aduzha01/bionic-toolchain-x86_64/sysroot/usr
+libdir=${exec_prefix}/lib64
+includedir=${prefix}/include
+
+Name: VULKAN
+Description: Vulkan Loader
+Version: 1.0.68
+Libs: -L${libdir} -lvulkan
+Libs.private:  -lstdc++ -lm -lgcc -lgcc -ldl -lc -lgcc -lgcc -ldl
+Cflags: -I${includedir}
+
