@@ -1,0 +1,20 @@
+[binaries]
+ar = 'x86_64-linux-android-ar'
+as = 'x86_64-linux-android-clang' 
+c = 'x86_64-linux-android-clang'
+cpp = 'x86_64-linux-android-clang++'
+ld = 'x86_64-linux-android-ld'
+strip = 'x86_64-linux-android-strip'
+pkgconfig = 'pkg-config'
+
+[properties]
+c_args = ['-fPIE', '-fPIC', '-U__ANDROID__', '-UANDROID']
+c_link_args = ['-pie', '-Wl,--enable-new-dtags', '-Wl,-rpath,/XXXXXX', '-Wl,--no-undefined', '-lc++_shared'] ### -shared conflicts -pie ### results errors when use gcc
+cpp_args = ['-fPIE', '-fPIC', '-U__ANDROID__', '-UANDROID']
+cpp_link_args = ['-pie', '-Wl,--enable-new-dtags', '-Wl,-rpath,/XXXXXX', '-Wl,--no-undefined', '-lc++_shared']
+
+[host_machine]
+system = 'linux'
+cpu_family = 'x86_64'
+cpu = 'x86_64'
+endian = 'little' 
