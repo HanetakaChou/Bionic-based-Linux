@@ -1,0 +1,10 @@
+prefix=/home/aduzha01/bionic-toolchain-x86_64/sysroot/usr
+libdir=${prefix}/lib64
+includedir=${prefix}/include
+
+Name: glesv1_cm
+Description: Mesa OpenGL ES 1.1 CM library
+Version: 19.3.4
+Libs: -L${libdir} -lGLESv1_CM
+Libs.private: -lpthread -pthread -lm
+Cflags: -I${includedir}

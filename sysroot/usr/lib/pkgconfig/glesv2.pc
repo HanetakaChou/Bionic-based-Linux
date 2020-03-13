@@ -1,0 +1,10 @@
+prefix=/home/aduzha01/bionic-toolchain-x86_64/sysroot/usr
+libdir=${prefix}/lib64
+includedir=${prefix}/include
+
+Name: glesv2
+Description: Mesa OpenGL ES 2.0 library
+Version: 19.3.4
+Libs: -L${libdir} -lGLESv2
+Libs.private: -lpthread -pthread -lm
+Cflags: -I${includedir}
