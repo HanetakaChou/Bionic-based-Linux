@@ -31,4 +31,26 @@
 
 #include <linux/shm.h>
 
+#include <sys/syscall.h>
+
+static __inline void* shmat(int __shm_id, const void* __addr, int __flags)
+{
+   return (void*)syscall(SYS_shmat, __shm_id, __addr, __flags);
+}
+ 
+static __inline int shmdt(const void *__addr)
+{
+   return syscall(SYS_shmdt, __addr);
+}
+
+static __inline int shmctl(int __shm_id, int __cmd, struct shmid_ds *__buf)
+{
+    return syscall(SYS_shmctl, __shm_id, __cmd, __buf);
+}
+
+static int __inline shmget(key_t __key, size_t __size, int __flags)
+{
+    return syscall(SYS_shmget, __key, __size, __flags);
+}
+
 #endif /* _SYS_SHM_H_ */
