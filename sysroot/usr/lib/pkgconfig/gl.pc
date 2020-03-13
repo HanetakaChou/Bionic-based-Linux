@@ -1,0 +1,13 @@
+prefix=/home/aduzha01/bionic-toolchain-x86_64/sysroot/usr
+libdir=${prefix}/lib64
+includedir=${prefix}/include
+
+glx_tls=yes
+
+Name: gl
+Description: Mesa OpenGL Library
+Version: 19.3.4
+Requires.private: x11, xext, xcb, libdrm >=  2.4.75
+Libs: -L${libdir} -lGL
+Libs.private: -lpthread -pthread -lm
+Cflags: -I${includedir}
