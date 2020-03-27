@@ -23,7 +23,7 @@
 # include <support/win32/locale_win32.h>
 #elif defined(_AIX)
 # include <support/ibm/xlocale.h>
-#elif defined(__ANDROID__)
+#elif defined(__ANDROID__) || (defined(__linux__) && defined(__BIONIC__))
 // Android gained the locale aware functions in L (API level 21)
 # include <android/api-level.h>
 # if __ANDROID_API__ <= 20
