@@ -1,2 +1,0 @@
-#!/bin/bash
-`dirname $0`/../x86_64-linux-android/bin/nm "$@"

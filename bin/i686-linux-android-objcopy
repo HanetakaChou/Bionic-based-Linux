@@ -1,0 +1,2 @@
+#!/bin/bash
+`dirname $0`/../i686-linux-android/bin/objcopy "$@"
