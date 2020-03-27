@@ -124,18 +124,6 @@ typedef volatile int pthread_once_t;
 
 #define PTHREAD_ONCE_INIT 0
 
-typedef struct {
-#if defined(__LP64__)
-  int64_t __private[4];
-#else
-  int32_t __private[8];
-#endif
-} pthread_barrier_t;
-
-typedef int pthread_barrierattr_t;
-
-#define PTHREAD_BARRIER_SERIAL_THREAD -1
-
 #if defined(__LP64__)
 #define PTHREAD_STACK_MIN (4 * PAGE_SIZE)
 #else
@@ -239,15 +227,6 @@ int pthread_rwlock_tryrdlock(pthread_rwlock_t*) __nonnull((1));
 int pthread_rwlock_trywrlock(pthread_rwlock_t*) __nonnull((1));
 int pthread_rwlock_unlock(pthread_rwlock_t *rwlock) __nonnull((1));
 int pthread_rwlock_wrlock(pthread_rwlock_t*) __nonnull((1));
-
-int pthread_barrierattr_init(pthread_barrierattr_t* attr) __nonnull((1));
-int pthread_barrierattr_destroy(pthread_barrierattr_t* attr) __nonnull((1));
-int pthread_barrierattr_getpshared(pthread_barrierattr_t* attr, int* pshared) __nonnull((1, 2));
-int pthread_barrierattr_setpshared(pthread_barrierattr_t* attr, int pshared) __nonnull((1));
-
-int pthread_barrier_init(pthread_barrier_t*, const pthread_barrierattr_t*, unsigned) __nonnull((1));
-int pthread_barrier_destroy(pthread_barrier_t*) __nonnull((1));
-int pthread_barrier_wait(pthread_barrier_t*) __nonnull((1));
 
 pthread_t pthread_self(void) __pure2;
 
