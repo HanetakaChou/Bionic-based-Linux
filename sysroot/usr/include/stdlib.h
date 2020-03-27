@@ -58,16 +58,9 @@ extern int unsetenv(const char*);
 extern int clearenv(void);
 
 extern char* mkdtemp(char*);
-extern char* mktemp(char*) __attribute__((deprecated("mktemp is unsafe, use mkstemp or tmpfile instead")));
-
-extern int mkostemp64(char*, int);
-extern int mkostemp(char*, int);
-extern int mkostemps64(char*, int, int);
-extern int mkostemps(char*, int, int);
-extern int mkstemp64(char*);
+extern char* mktemp(char*) __warnattr("mktemp possibly used unsafely; consider using mkstemp");
 extern int mkstemp(char*);
-extern int mkstemps64(char*, int);
-extern int mkstemps(char*, int);
+extern int mkstemp64(char*);
 
 extern long strtol(const char *, char **, int);
 extern long long strtoll(const char *, char **, int);
@@ -76,13 +69,13 @@ extern unsigned long long strtoull(const char *, char **, int);
 
 extern int posix_memalign(void **memptr, size_t alignment, size_t size);
 
-extern double atof(const char*) __NDK_FPABI__;
+extern double atof(const char*);
 
-extern double strtod(const char*, char**) __LIBC_ABI_PUBLIC__ __NDK_FPABI__;
-extern float strtof(const char*, char**) __LIBC_ABI_PUBLIC__ __NDK_FPABI__;
-extern long double strtold(const char*, char**) __LIBC_ABI_PUBLIC__ __NDK_FPABI__;
+extern double strtod(const char*, char**) __LIBC_ABI_PUBLIC__;
+extern float strtof(const char*, char**) __LIBC_ABI_PUBLIC__;
+extern long double strtold(const char*, char**) __LIBC_ABI_PUBLIC__;
 
-extern long double strtold_l(const char *, char **, locale_t) __LIBC_ABI_PUBLIC__ __NDK_FPABI__;
+extern long double strtold_l(const char *, char **, locale_t) __LIBC_ABI_PUBLIC__;
 extern long long strtoll_l(const char *, char **, int, locale_t) __LIBC_ABI_PUBLIC__;
 extern unsigned long long strtoull_l(const char *, char **, int, locale_t) __LIBC_ABI_PUBLIC__;
 
@@ -108,8 +101,8 @@ extern long mrand48(void);
 extern long nrand48(unsigned short *);
 extern long lrand48(void);
 extern unsigned short *seed48(unsigned short*);
-extern double erand48(unsigned short xsubi[3]) __NDK_FPABI__;
-extern double drand48(void) __NDK_FPABI__;
+extern double erand48(unsigned short xsubi[3]);
+extern double drand48(void);
 extern void srand48(long);
 
 unsigned int arc4random(void);

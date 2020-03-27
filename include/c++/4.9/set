@@ -116,6 +116,7 @@ public:
     void insert(initializer_list<value_type> il);
 
     iterator  erase(const_iterator position);
+    iterator  erase(iterator position);  // C++14
     size_type erase(const key_type& k);
     iterator  erase(const_iterator first, const_iterator last);
     void clear() noexcept;
@@ -297,6 +298,7 @@ public:
     void insert(initializer_list<value_type> il);
 
     iterator  erase(const_iterator position);
+    iterator  erase(iterator position);  // C++14
     size_type erase(const key_type& k);
     iterator  erase(const_iterator first, const_iterator last);
     void clear() noexcept;
@@ -406,6 +408,9 @@ public:
     typedef _Allocator                               allocator_type;
     typedef value_type&                              reference;
     typedef const value_type&                        const_reference;
+
+    static_assert((is_same<typename allocator_type::value_type, value_type>::value),
+                  "Allocator::value_type must be same type as value_type");
 
 private:
     typedef __tree<value_type, value_compare, allocator_type> __base;
@@ -663,6 +668,12 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     size_type      count(const key_type& __k) const
         {return __tree_.__count_unique(__k);}
+#if _LIBCPP_STD_VER > 11
+    template <typename _K2>
+    _LIBCPP_INLINE_VISIBILITY
+    typename enable_if<__is_transparent<_Compare, _K2>::value,size_type>::type
+    count(const _K2& __k)                  {return __tree_.__count_unique(__k);}
+#endif
     _LIBCPP_INLINE_VISIBILITY
     iterator lower_bound(const key_type& __k)
         {return __tree_.lower_bound(__k);}
@@ -810,6 +821,9 @@ public:
     typedef _Allocator                                allocator_type;
     typedef value_type&                              reference;
     typedef const value_type&                        const_reference;
+
+    static_assert((is_same<typename allocator_type::value_type, value_type>::value),
+                  "Allocator::value_type must be same type as value_type");
 
 private:
     typedef __tree<value_type, value_compare, allocator_type> __base;
@@ -1066,6 +1080,12 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     size_type      count(const key_type& __k) const
         {return __tree_.__count_multi(__k);}
+#if _LIBCPP_STD_VER > 11
+    template <typename _K2>
+    _LIBCPP_INLINE_VISIBILITY
+    typename enable_if<__is_transparent<_Compare, _K2>::value,size_type>::type
+    count(const _K2& __k)                  {return __tree_.__count_multi(__k);}
+#endif
 
     _LIBCPP_INLINE_VISIBILITY
     iterator lower_bound(const key_type& __k)

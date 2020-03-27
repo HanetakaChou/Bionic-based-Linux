@@ -1,66 +1,127 @@
+// -*- C++ -*-
+//===---------------------------- stdio.h ---------------------------------===//
+//
+//                     The LLVM Compiler Infrastructure
+//
+// This file is dual licensed under the MIT and the University of Illinois Open
+// Source Licenses. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+
+#if defined(__need_FILE) || defined(__need___FILE)
+
+#if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
+#pragma GCC system_header
+#endif
+
+#include_next <stdio.h>
+
+#elif !defined(_LIBCPP_STDIO_H)
+#define _LIBCPP_STDIO_H
+
 /*
- * Copyright (C) 2013 The Android Open Source Project
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *  * Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *  * Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- */
-#ifndef NDK_ANDROID_SUPPORT_STDIO_H
-#define NDK_ANDROID_SUPPORT_STDIO_H
+    stdio.h synopsis
 
-#if defined(__LP64__)
+Macros:
+
+    BUFSIZ
+    EOF
+    FILENAME_MAX
+    FOPEN_MAX
+    L_tmpnam
+    NULL
+    SEEK_CUR
+    SEEK_END
+    SEEK_SET
+    TMP_MAX
+    _IOFBF
+    _IOLBF
+    _IONBF
+    stderr
+    stdin
+    stdout
+
+Types:
+
+FILE
+fpos_t
+size_t
+
+int remove(const char* filename);
+int rename(const char* old, const char* new);
+FILE* tmpfile(void);
+char* tmpnam(char* s);
+int fclose(FILE* stream);
+int fflush(FILE* stream);
+FILE* fopen(const char* restrict filename, const char* restrict mode);
+FILE* freopen(const char* restrict filename, const char * restrict mode,
+              FILE * restrict stream);
+void setbuf(FILE* restrict stream, char* restrict buf);
+int setvbuf(FILE* restrict stream, char* restrict buf, int mode, size_t size);
+int fprintf(FILE* restrict stream, const char* restrict format, ...);
+int fscanf(FILE* restrict stream, const char * restrict format, ...);
+int printf(const char* restrict format, ...);
+int scanf(const char* restrict format, ...);
+int snprintf(char* restrict s, size_t n, const char* restrict format, ...);    // C99
+int sprintf(char* restrict s, const char* restrict format, ...);
+int sscanf(const char* restrict s, const char* restrict format, ...);
+int vfprintf(FILE* restrict stream, const char* restrict format, va_list arg);
+int vfscanf(FILE* restrict stream, const char* restrict format, va_list arg);  // C99
+int vprintf(const char* restrict format, va_list arg);
+int vscanf(const char* restrict format, va_list arg);                          // C99
+int vsnprintf(char* restrict s, size_t n, const char* restrict format,         // C99
+              va_list arg);
+int vsprintf(char* restrict s, const char* restrict format, va_list arg);
+int vsscanf(const char* restrict s, const char* restrict format, va_list arg); // C99
+int fgetc(FILE* stream);
+char* fgets(char* restrict s, int n, FILE* restrict stream);
+int fputc(int c, FILE* stream);
+int fputs(const char* restrict s, FILE* restrict stream);
+int getc(FILE* stream);
+int getchar(void);
+char* gets(char* s);  // removed in C++14
+int putc(int c, FILE* stream);
+int putchar(int c);
+int puts(const char* s);
+int ungetc(int c, FILE* stream);
+size_t fread(void* restrict ptr, size_t size, size_t nmemb,
+             FILE* restrict stream);
+size_t fwrite(const void* restrict ptr, size_t size, size_t nmemb,
+              FILE* restrict stream);
+int fgetpos(FILE* restrict stream, fpos_t* restrict pos);
+int fseek(FILE* stream, long offset, int whence);
+int fsetpos(FILE*stream, const fpos_t* pos);
+long ftell(FILE* stream);
+void rewind(FILE* stream);
+void clearerr(FILE* stream);
+int feof(FILE* stream);
+int ferror(FILE* stream);
+void perror(const char* s);
+*/
+
+#include <__config>
+
+#if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
+#pragma GCC system_header
+#endif
 
 #include_next <stdio.h>
 
-#else
-
-// This is to avoid a compiler error when the putc() macro definition
-// in <stdio.h> follows a putc() function definition which is apparently
-// not compatible with it.
-#define _POSIX_THREADS 1
-#include_next <stdio.h>
-
-#include <stdarg.h>
-#include <wchar.h>
-#include <xlocale.h>
-
 #ifdef __cplusplus
-extern "C" {
+
+// snprintf
+#if defined(_LIBCPP_MSVCRT)
+extern "C++" {
+#include "support/win32/support.h"
+}
 #endif
 
-int asprintf_l(char**, locale_t, const char*, ...);
-int sprintf_l(char*, locale_t, const char*, ...);
-int snprintf_l(char*, size_t, locale_t, const char*, ...);
-int sscanf_l(const char*, locale_t, const char*, ...);
+#undef getc
+#undef putc
+#undef clearerr
+#undef feof
+#undef ferror
 
-int vfwscanf(FILE* __restrict__, const wchar_t* __restrict__, va_list);
-int vswscanf(const wchar_t *__restrict__, const wchar_t * __restrict__, va_list);
-int vwscanf(const wchar_t *__restrict__, va_list);
-
-#ifdef __cplusplus
-}  // extern "C"
 #endif
 
-#endif // !__LP64__
-
-#endif  // NDK_ANDROID_SUPPORT_STDIO_H
+#endif  // _LIBCPP_STDIO_H

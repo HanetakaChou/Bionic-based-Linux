@@ -1,1 +1,1 @@
-libc++_shared.so
+INPUT(-lc++_static -lc++abi -landroid_support)
