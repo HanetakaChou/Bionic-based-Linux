@@ -1,4 +1,4 @@
-prefix=/home/YuqiaoZhang/bionic-toolchain-x86/sysroot/usr
+prefix=/home/aduzha01/bionic-toolchain-x86/sysroot/usr
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
