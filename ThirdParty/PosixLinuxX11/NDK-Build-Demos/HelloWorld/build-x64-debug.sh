@@ -21,24 +21,16 @@ mkdir -p ${out_dir}
 rm -rf ${out_dir}/${target_name}
 cp -f ${int_dir}/${target_name} ${out_dir}/
 
-# copy the dep libs to out dir  
-cp -f ../../Bionic-Redistributable/lib64/libc.so ${out_dir}
-cp -f ../../Bionic-Redistributable/lib64/libdl.so ${out_dir}
-cp -f ../../Bionic-Redistributable/lib64/libm.so ${out_dir}
-cp -f ../../Bionic-Redistributable/lib64/libstdc++.so ${out_dir}/  
-cp -f ../../Bionic-Redistributable/lib64/libc++_shared.so ${out_dir}/  
-
 # copy the gdb related
 cp -f libs/x86_64/gdbserver ${out_dir}/
-cp -f libs/x86_64/gdb.setup ${out_dir}/
+#cp -f libs/x86_64/gdb.setup ${out_dir}/
 
-# place the linker at cwd   
-cp -f ../../Bionic-Redistributable/lib64/linker ${out_dir}/ 
+# change to cwd   
 cd ${out_dir}
 
 # execute the generated ${target_name}  
-# gdbserver :27077 ./${target_name}
-./gdbserver :27077 ./${target_name} --validate ### //either gdbserver from ndk or your linux distribution is OK
+gdbserver :27077 ./${target_name}
+#./gdbserver :27077 ./${target_name} # the gdbserver from ndk doesn't work
 
 
 

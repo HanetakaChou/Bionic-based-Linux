@@ -7,8 +7,8 @@ int_dir="libs/x86"
 out_dir="../../../../Binary/x86/Release"
 
 # build by ndk
-# rm -rf obj/local/x86
-# rm -rf libs/x86
+rm -rf obj/local/x86
+rm -rf libs/x86
 ndk-build APP_DEBUG:=false APP_ABI:=x86 NDK_PROJECT_PATH:=null NDK_OUT:=obj NDK_LIBS_OUT:=libs NDK_APPLICATION_MK:=Application.mk APP_BUILD_SCRIPT:=LinuxX11.mk 
 
 # before execute change the rpath to \$ORIGIN  
@@ -21,16 +21,8 @@ mkdir -p ${out_dir}
 rm -rf ${out_dir}/${target_name}
 cp -f ${int_dir}/${target_name} ${out_dir}/
 
-# copy the dep libs to out dir  
-cp -f ../../Bionic-Redistributable/lib/libc.so ${out_dir}/
-cp -f ../../Bionic-Redistributable/lib/libdl.so ${out_dir}/
-cp -f ../../Bionic-Redistributable/lib/libm.so ${out_dir}/
-cp -f ../../Bionic-Redistributable/lib/libstdc++.so ${out_dir}/  
-cp -f ../../Bionic-Redistributable/lib/libc++_shared.so ${out_dir}/  
-
-# place the linker at cwd   
-cp -f ../../Bionic-Redistributable/lib/linker ${out_dir}/
+# change to cwd   
 cd ${out_dir}
   
 # execute the generated a.out  
-./${target_name} # --validate
+./${target_name} 
