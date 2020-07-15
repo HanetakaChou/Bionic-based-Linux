@@ -25,29 +25,19 @@ LOCAL_CFLAGS += -DGLM_FORCE_RADIANS
 
 LOCAL_CPP_FEATURES := exceptions
 
-LOCAL_LDFLAGS += -Wl,-dynamic-linker,linker ### put the linker at cwd
-
 LOCAL_LDFLAGS += -Wl,--enable-new-dtags ### the linker can't recognize the old dtags
 LOCAL_LDFLAGS += -Wl,-rpath,/XXXXXX ### chrpath can only make path shorter
 
 LOCAL_LDFLAGS += -lvulkan
 
-LOCAL_SHARED_LIBRARIES := libxcb
-
-include $(BUILD_EXECUTABLE)
-
-# libxcb
-
-include $(CLEAR_VARS)
-
-LOCAL_MODULE := libxcb
-
 ifeq (x86_64,$(TARGET_ARCH))
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../../Bionic-Redistributable/lib64/libxcb.so
+LOCAL_LDFLAGS += -L/system/lib64
 endif
 
 ifeq (x86,$(TARGET_ARCH))
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../../Bionic-Redistributable/lib/libxcb.so
+LOCAL_LDFLAGS += -L/system/lib
 endif
 
-include $(PREBUILT_SHARED_LIBRARY) # ndk-build will strip the so
+LOCAL_LDFLAGS += -lxcb
+
+include $(BUILD_EXECUTABLE)
