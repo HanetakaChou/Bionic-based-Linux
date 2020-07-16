@@ -8,16 +8,16 @@
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/../../../../Binary/x64/Debug/a.out",
+            "program": "${workspaceFolder}/../../Binary/x64/Debug/a.out",
             "args": [],
             "stopAtEntry": true,
-            "cwd": "${workspaceFolder}/../../../../Binary/x64/Debug",  
+            "cwd": "${workspaceFolder}/../../Binary/x64/Debug",  
             "envFile": "${workspaceFolder}/.vscode/cppvsdbg.env",          
             "externalConsole": false,
             "MIMode": "gdb",
             "miDebuggerPath": "${env:HOME}/.local/libexec/android-ndk-r14b/prebuilt/linux-x86_64/bin/gdb", //either gdb from ndk or your linux distribution is OK
             "miDebuggerArgs": "--init-command=${workspaceFolder}/libs/x86_64/gdb.setup",
-            "additionalSOLibSearchPath": "${workspaceFolder}/../../../../Binary/x64/Debug",
+            "additionalSOLibSearchPath": "${workspaceFolder}/../../Binary/x64/Debug",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",

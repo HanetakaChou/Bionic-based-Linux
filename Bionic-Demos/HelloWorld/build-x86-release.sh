@@ -4,7 +4,7 @@ cd "$(dirname "$(readlink -f "${0}")")"
 
 target_name="a.out"
 int_dir="libs/x86"
-out_dir="../../../../Binary/x86/Release"
+out_dir="../../Binary/x86/Release"
 
 # build by ndk
 # rm -rf obj/local/x86
