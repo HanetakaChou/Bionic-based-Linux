@@ -19,4 +19,4 @@ mkdir -p ${out_dir}
 
 # copy the unstriped so to out dir
 rm -rf ${out_dir}/${target_name}
-cp -f ${int_dir}/${target_name} ${out_dir}/
+cp -f ${int_dir}/${target_name} ${out_dir}/ # should copy the a.out in obj instead of the one in libs
