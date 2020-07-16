@@ -339,4 +339,4 @@ chrpath -r "\$ORIGIN" "$HOME/bionic-toolchain-$target_arch/sysroot/usr/lib/lib**
 ---     
     
 # vk-demos-cube  
-![](/ThirdParty/PosixLinuxX11/vk-demos-cube.png)  
+![](https://github.com/YuqiaoZhang/Bionic-based-Linux/blob/demos/Bionic-Demos/vkcube/vk-demos-cube.png)  
