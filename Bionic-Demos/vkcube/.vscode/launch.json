@@ -5,19 +5,45 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch",
+            "name": "(gdb) Launch x64",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/../../Binary/x64/Debug/vkcube", //should set vkcube in obj here instead of the one in libs
-            "args": ["--validate"],
+            "program": "${workspaceFolder}/obj/local/x86_64/vkcube", //should set vkcube in obj here instead of the one in libs
+            "args": [
+                "--validate"
+            ],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/../../Binary/x64/Debug",
-            "envFile": "${workspaceFolder}/.vscode/cppvsdbg.env",
+            "cwd": "${workspaceFolder}",
             "environment": [],
+            "envFile": "${workspaceFolder}/.vscode/cppvsdbg.env",
             "externalConsole": false,
             "MIMode": "gdb",
             "miDebuggerPath": "${env:HOME}/.local/libexec/android-ndk-r14b/prebuilt/linux-x86_64/bin/gdb", //either gdb from ndk or your linux distribution is OK
             "miDebuggerArgs": "--init-command=${workspaceFolder}/libs/x86_64/gdb.setup",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": false
+                }
+            ]
+        },
+        {
+            "name": "(gdb) Launch x86",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/obj/local/x86/vkcube", //should set vkcube in obj here instead of the one in libs
+            "args": [
+                "--validate"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "envFile": "${workspaceFolder}/.vscode/cppvsdbg.env",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "${env:HOME}/.local/libexec/android-ndk-r14b/prebuilt/linux-x86_64/bin/gdb", //either gdb from ndk or your linux distribution is OK
+            "miDebuggerArgs": "--init-command=${workspaceFolder}/libs/x86/gdb.setup",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",

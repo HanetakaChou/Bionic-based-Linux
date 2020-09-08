@@ -14,8 +14,8 @@ mkdir -p generated
 /system/bin64/glslangValidator -V cube.frag -x -o generated/cube.frag.inc
 
 # include-bin
-../../Binary/x64/Release/include-bin lunarg.ppm generated/lunarg.ppm.h
-../../Binary/x64/Release/include-bin ../Assets/Lenna/l_hires-ASTC.pvr generated/ll_hires-ASTC.pvr.h
+../include-bin/bin64/include-bin lunarg.ppm generated/lunarg.ppm.h
+../include-bin/bin64/include-bin ../Assets/Lenna/l_hires-ASTC.pvr generated/ll_hires-ASTC.pvr.h
 
 # build by ndk
 rm -f ${int_dir}/${target_name}
