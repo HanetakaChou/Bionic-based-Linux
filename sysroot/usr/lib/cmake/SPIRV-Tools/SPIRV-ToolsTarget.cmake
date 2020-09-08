@@ -55,6 +55,7 @@ add_library(SPIRV-Tools STATIC IMPORTED)
 
 set_target_properties(SPIRV-Tools PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
+  INTERFACE_LINK_LIBRARIES "/home/aduzha01/bionic-toolchain-x86/sysroot/usr/lib/librt.so"
 )
 
 # Create imported target SPIRV-Tools-shared
@@ -63,7 +64,12 @@ add_library(SPIRV-Tools-shared SHARED IMPORTED)
 set_target_properties(SPIRV-Tools-shared PROPERTIES
   INTERFACE_COMPILE_DEFINITIONS "SPIRV_TOOLS_SHAREDLIB"
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
+  INTERFACE_LINK_LIBRARIES "/home/aduzha01/bionic-toolchain-x86/sysroot/usr/lib/librt.so"
 )
+
+if(CMAKE_VERSION VERSION_LESS 2.8.12)
+  message(FATAL_ERROR "This file relies on consumers using CMake 2.8.12 or greater.")
+endif()
 
 # Load information for each installed configuration.
 get_filename_component(_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
