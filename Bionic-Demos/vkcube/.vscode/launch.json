@@ -13,7 +13,7 @@
                 "--validate"
             ],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/obj/local/x86_64",
             "environment": [],
             "envFile": "${workspaceFolder}/.vscode/cppvsdbg.env",
             "externalConsole": false,
@@ -37,7 +37,7 @@
                 "--validate"
             ],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/obj/local/x86",
             "environment": [],
             "envFile": "${workspaceFolder}/.vscode/cppvsdbg.env",
             "externalConsole": false,

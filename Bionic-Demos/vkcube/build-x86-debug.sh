@@ -3,7 +3,7 @@
 cd "$(dirname "$(readlink -f "${0}")")"
  
 target_name="vkcube"
-int_dir="obj/local/x86_64"
+int_dir="obj/local/x86"
 
 rm -rf generated
 mkdir -p generated
@@ -18,7 +18,7 @@ mkdir -p generated
 
 # build by ndk
 rm -f ${int_dir}/${target_name}
-ndk-build APP_DEBUG:=true APP_ABI:=x86_64 NDK_PROJECT_PATH:=null NDK_OUT:=obj NDK_LIBS_OUT:=libs NDK_APPLICATION_MK:=Application.mk APP_BUILD_SCRIPT:=LinuxX11.mk 
+ndk-build APP_DEBUG:=true APP_ABI:=x86 NDK_PROJECT_PATH:=null NDK_OUT:=obj NDK_LIBS_OUT:=libs NDK_APPLICATION_MK:=Application.mk APP_BUILD_SCRIPT:=LinuxX11.mk 
 
 # before execute change the rpath to \$ORIGIN    
 chrpath -r '$ORIGIN' ${int_dir}/${target_name}

@@ -1552,7 +1552,7 @@ static void demo_create_device(struct demo *demo)
   queues[0].flags = 0;
 
   VkPhysicalDeviceFeatures enableFeatures = {0};
-  enableFeatures.textureCompressionASTC_LDR = VK_TRUE;
+  enableFeatures.textureCompressionASTC_LDR = VK_FALSE;
   enableFeatures.textureCompressionBC = VK_TRUE;
 
   VkDeviceCreateInfo device = {
