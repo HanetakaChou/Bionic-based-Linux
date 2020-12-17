@@ -97,7 +97,14 @@ typedef struct
 
 // Allow a maximum of two outstanding presentation operations.
 // We can use fences to throttle if we get too far ahead of the image presents
-uint32_t const FRAME_LAG = 2;
+static uint32_t const FRAME_LAG = 2;
+
+// https://www.khronos.org/registry/vulkan/specs/1.0/html/chap33.html#limits-minmax
+// maxPushConstantsSize 128
+// minUniformBufferOffsetAlignment 256
+static VkDeviceSize const limits_min_max_push_constants_size = 128U;
+static uint32_t const limits_max_min_uniform_buffer_offset_alignment = 256U;
+static uint32_t const CUBE_COUNT = 2;
 
 #include "VK/StagingBuffer.h"
 
@@ -198,8 +205,10 @@ struct demo
   VkSemaphore draw_complete_semaphores[FRAME_LAG];
   VkSemaphore image_ownership_semaphores[FRAME_LAG];
 
-  VkBuffer uniform_buffer[FRAME_LAG];
-  VkDeviceMemory uniform_memory[FRAME_LAG];
+  VkBuffer dynamic_uniform_buffer;
+  VkDeviceMemory dynamic_uniform_memory;
+  void *dynamic_uniform_data;
+
   VkDescriptorSet descriptor_set[FRAME_LAG];
 
   VkDescriptorPool desc_pool;
@@ -218,7 +227,7 @@ struct demo
   VkBuffer vertex_buffer_addition[1];
 
   struct staging_texture_object staging_texture[1];
-  struct texture_object texture_assets[1];
+  struct texture_object texture_assets[2];
 
   VkPipelineLayout pipeline_layout;
   VkDescriptorSetLayout desc_layout;
@@ -230,7 +239,8 @@ struct demo
 
   mat4x4 projection_matrix;
   mat4x4 view_matrix;
-  mat4x4 model_matrix;
+  mat4x4 rotate_matrix_1;
+  mat4x4 rotate_matrix_2;
 
   bool pause;
   float spin_angle;
@@ -517,42 +527,6 @@ static void demo_draw(struct demo *demo)
     sched_yield();
   }
 
-  // Fence manage [Re-used Resources](https://docs.microsoft.com/en-us/windows/win32/direct3d12/memory-management-strategies)
-  // [RingBuffer](https://docs.microsoft.com/en-us/windows/win32/direct3d12/fence-based-resource-management) may use diffirent (number of) fences
-  demo_update_data_buffer(demo);
-
-  //update descriptor
-  {
-    VkDescriptorBufferInfo buffer_info;
-    buffer_info.offset = 0;
-    buffer_info.range = sizeof(struct vktexcube_vs_uniform);
-    buffer_info.buffer = demo->uniform_buffer[demo->frame_index];
-
-    VkDescriptorImageInfo tex_descs[1];
-    memset(&tex_descs, 0, sizeof(tex_descs));
-    tex_descs[0].sampler = demo->dds_sampler; //texture_assets[0].sampler;
-    tex_descs[0].imageView = demo->dds_view;  //texture_assets[0].view;
-    tex_descs[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    VkWriteDescriptorSet writes[2];
-    memset(&writes, 0, sizeof(writes));
-    writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writes[0].descriptorCount = 1;
-    writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    writes[0].pBufferInfo = &buffer_info;
-
-    writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writes[1].dstBinding = 1;
-    writes[1].descriptorCount = 1;
-    writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    writes[1].pImageInfo = tex_descs;
-
-    writes[0].dstSet = demo->descriptor_set[demo->frame_index];
-    writes[1].dstSet = demo->descriptor_set[demo->frame_index];
-
-    vkUpdateDescriptorSets(demo->device, 2, writes, 0, NULL);
-  }
-
   // It is believed that any operations(draw, copy, dispatch etc) in Vulkan consists of multiple stages.
   err = vkResetCommandPool(demo->device, demo->cmd_pool[demo->frame_index], 0U);
   assert(!err);
@@ -754,24 +728,32 @@ static void demo_update_data_buffer(struct demo *demo)
 {
   VkResult U_ASSERT_ONLY err;
 
-  void *pdata_map;
-  err = vkMapMemory(demo->device, demo->uniform_memory[demo->frame_index], 0, VK_WHOLE_SIZE, 0, &pdata_map);
-  assert(!err);
-
-  struct vktexcube_vs_uniform *pData = static_cast<struct vktexcube_vs_uniform *>(pdata_map);
-
-  mat4x4 Model;
-
   if (!demo->pause)
   {
-    // Rotate around the Y axis
-    mat4x4_dup(Model, demo->model_matrix);
-    mat4x4_rotate(demo->model_matrix, Model, 0.0f, 1.0f, 0.0f, (float)degreesToRadians(demo->spin_angle));
+    mat4x4 Model_1;
+    mat4x4_dup(Model_1, demo->rotate_matrix_1);
+    mat4x4_rotate(demo->rotate_matrix_1, Model_1, 0.0f, 1.0f, 0.0f, (float)degreesToRadians(demo->spin_angle));
+
+    mat4x4 Model_2;
+    mat4x4_dup(Model_2, demo->rotate_matrix_2);
+    mat4x4_rotate(demo->rotate_matrix_2, Model_2, 0.0f, 1.0f, 0.0f, (float)degreesToRadians(-demo->spin_angle));
   }
 
-  memcpy(&pData->m[0][0], (const void *)&demo->model_matrix[0][0], sizeof(Model));
+  mat4x4 M_1;
+  mat4x4 translate_matrix_1;
+  mat4x4_translate(translate_matrix_1, 1.0f, 1.0f, 0.0f);
+  mat4x4_mul(M_1, translate_matrix_1, demo->rotate_matrix_1);
 
-  vkUnmapMemory(demo->device, demo->uniform_memory[demo->frame_index]);
+  struct vktexcube_vs_uniform *pData_1 = reinterpret_cast<struct vktexcube_vs_uniform *>(reinterpret_cast<uintptr_t>(demo->dynamic_uniform_data) + limits_max_min_uniform_buffer_offset_alignment * CUBE_COUNT * demo->frame_index);
+  memcpy(&pData_1->m[0][0], (const void *)&M_1[0][0], sizeof(M_1));
+
+  mat4x4 M_2;
+  mat4x4 translate_matrix_2;
+  mat4x4_translate(translate_matrix_2, -1.0f, -1.0f, 0.0f);
+  mat4x4_mul(M_2, translate_matrix_2, demo->rotate_matrix_2);
+
+  struct vktexcube_vs_uniform *pData_2 = reinterpret_cast<struct vktexcube_vs_uniform *>(reinterpret_cast<uintptr_t>(demo->dynamic_uniform_data) + limits_max_min_uniform_buffer_offset_alignment * (CUBE_COUNT * demo->frame_index + 1));
+  memcpy(&pData_2->m[0][0], (const void *)&M_2[0][0], sizeof(M_2));
 }
 
 static void demo_update_data_pushconstant(struct demo *demo, struct vktexcube_vs_pushconstant *data_pushconstant)
@@ -826,14 +808,53 @@ static void demo_draw_build_cmd(struct demo *demo, VkCommandBuffer cmd_buf)
   scissor.offset.y = 0;
   vkCmdSetScissor(cmd_buf, 0, 1, &scissor);
   vkCmdPushConstants(cmd_buf, demo->pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(vktexcube_vs_pushconstant), &data_pushconstant);
-  vkCmdBindDescriptorSets(
-      cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, demo->pipeline_layout, 0, 1,
-      &demo->descriptor_set[demo->frame_index], 0,
-      NULL);
+
   VkBuffer vb_[2] = {demo->vertex_buffer[0], demo->vertex_buffer_addition[0]};
   VkDeviceSize vk_offset[2] = {0, 0};
   vkCmdBindVertexBuffers(cmd_buf, 0, 2, vb_, vk_offset);
-  vkCmdDraw(cmd_buf, 12 * 3, 1, 0, 0);
+
+  // Fence manage [Re-used Resources](https://docs.microsoft.com/en-us/windows/win32/direct3d12/memory-management-strategies)
+  // [RingBuffer](https://docs.microsoft.com/en-us/windows/win32/direct3d12/fence-based-resource-management) may use diffirent (number of) fences
+  demo_update_data_buffer(demo);
+
+  //update descriptor
+  //hack
+  demo->texture_assets[1].sampler = demo->dds_sampler;
+  demo->texture_assets[1].view = demo->dds_view;
+
+  for (int cude_index = 0; cude_index < CUBE_COUNT; ++cude_index)
+  {
+    //update descriptor
+    //the binding state will only be fetched when issues vkCmdDraw?
+    {
+      VkDescriptorImageInfo tex_descs[1];
+      memset(&tex_descs, 0, sizeof(tex_descs));
+      tex_descs[0].sampler = demo->texture_assets[cude_index].sampler;
+      tex_descs[0].imageView = demo->texture_assets[cude_index].view;
+      tex_descs[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+      VkWriteDescriptorSet writes[1];
+      memset(&writes, 0, sizeof(writes));
+      writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+      writes[0].dstBinding = 1;
+      writes[0].descriptorCount = 1;
+      writes[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+      writes[0].pImageInfo = tex_descs;
+      writes[0].dstSet = demo->descriptor_set[demo->frame_index];
+
+      vkUpdateDescriptorSets(demo->device, 1, writes, 0, NULL);
+    }
+
+    //It's believed that "vkCmdBindDescriptorSets" is more efficient than "vkUpdateDescriptorSets"?
+    uint32_t dynamic_offsets[1] = {limits_max_min_uniform_buffer_offset_alignment * (CUBE_COUNT * demo->frame_index + cude_index)};
+    vkCmdBindDescriptorSets(
+        cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, demo->pipeline_layout,
+        0, 1, &demo->descriptor_set[demo->frame_index],
+        1, dynamic_offsets);
+
+    vkCmdDraw(cmd_buf, 12 * 3, 1, 0, 0);
+  }
+
   // Note that ending the renderpass changes the image's layout from
   // COLOR_ATTACHMENT_OPTIMAL to PRESENT_SRC_KHR
   vkCmdEndRenderPass(cmd_buf);
@@ -977,7 +998,8 @@ static void demo_init(struct demo *demo, int argc, char **argv)
 
   mat4x4_perspective(demo->projection_matrix, (float)degreesToRadians(45.0f), 1.0f, 0.1f, 100.0f);
   mat4x4_look_at(demo->view_matrix, eye, origin, up);
-  mat4x4_identity(demo->model_matrix);
+  mat4x4_identity(demo->rotate_matrix_1);
+  mat4x4_identity(demo->rotate_matrix_2);
 
   demo->projection_matrix[1][1] *= -1; // Flip projection matrix from GL to Vulkan orientation.
 }
@@ -2590,7 +2612,7 @@ static void demo_prepare_descriptor_layout(struct demo *demo)
       [0] =
           {
               .binding = 0,
-              .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+              .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
               .descriptorCount = 1,
               .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
               .pImmutableSamplers = NULL,
@@ -2615,6 +2637,7 @@ static void demo_prepare_descriptor_layout(struct demo *demo)
   err = vkCreateDescriptorSetLayout(demo->device, &descriptor_layout, NULL, &demo->desc_layout);
   assert(!err);
 
+  assert(sizeof(vktexcube_vs_pushconstant) <= limits_min_max_push_constants_size);
   const VkPushConstantRange pushConstantRanges[1] = {VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(vktexcube_vs_pushconstant)};
   const VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = {
       VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
@@ -2856,8 +2879,8 @@ static void demo_prepare_descriptor_pool(struct demo *demo)
   const VkDescriptorPoolSize type_counts[2] = {
       [0] =
           {
-              .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-              .descriptorCount = FRAME_LAG,
+              .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+              .descriptorCount = FRAME_LAG * 1,
           },
       [1] =
           {
@@ -3016,14 +3039,15 @@ static void demo_prepare_ringbuffer(struct demo *demo)
   memset(&buf_info, 0, sizeof(buf_info));
   buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
   buf_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-  buf_info.size = sizeof(struct vktexcube_vs_uniform);
 
-  for (unsigned int i = 0; i < FRAME_LAG; i++)
   {
-    err = vkCreateBuffer(demo->device, &buf_info, NULL, &demo->uniform_buffer[i]);
+    assert(sizeof(struct vktexcube_vs_uniform) <= limits_max_min_uniform_buffer_offset_alignment);
+    buf_info.size = limits_max_min_uniform_buffer_offset_alignment * CUBE_COUNT * FRAME_LAG;
+
+    err = vkCreateBuffer(demo->device, &buf_info, NULL, &demo->dynamic_uniform_buffer);
     assert(!err);
 
-    vkGetBufferMemoryRequirements(demo->device, demo->uniform_buffer[i], &mem_reqs);
+    vkGetBufferMemoryRequirements(demo->device, demo->dynamic_uniform_buffer, &mem_reqs);
 
     mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     mem_alloc.pNext = NULL;
@@ -3033,11 +3057,33 @@ static void demo_prepare_ringbuffer(struct demo *demo)
     pass = memory_type_from_properties(demo, mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &mem_alloc.memoryTypeIndex);
     assert(pass);
 
-    err = vkAllocateMemory(demo->device, &mem_alloc, NULL, &demo->uniform_memory[i]);
+    err = vkAllocateMemory(demo->device, &mem_alloc, NULL, &demo->dynamic_uniform_memory);
     assert(!err);
 
-    err = vkBindBufferMemory(demo->device, demo->uniform_buffer[i], demo->uniform_memory[i], 0);
+    err = vkBindBufferMemory(demo->device, demo->dynamic_uniform_buffer, demo->dynamic_uniform_memory, 0);
     assert(!err);
+
+    err = vkMapMemory(demo->device, demo->dynamic_uniform_memory, 0, VK_WHOLE_SIZE, 0, &demo->dynamic_uniform_data);
+    assert(!err);
+  }
+
+  //update descriptor
+  for (unsigned int i = 0; i < FRAME_LAG; i++)
+  {
+    VkDescriptorBufferInfo buffer_info;
+    buffer_info.offset = 0;
+    buffer_info.range = limits_max_min_uniform_buffer_offset_alignment * CUBE_COUNT * FRAME_LAG;
+    buffer_info.buffer = demo->dynamic_uniform_buffer;
+
+    VkWriteDescriptorSet writes[1];
+    memset(&writes, 0, sizeof(writes));
+    writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writes[0].descriptorCount = 1;
+    writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    writes[0].pBufferInfo = &buffer_info;
+    writes[0].dstSet = demo->descriptor_set[i];
+
+    vkUpdateDescriptorSets(demo->device, 1, writes, 0, NULL);
   }
 }
 
@@ -3415,10 +3461,10 @@ static void demo_cleanup(struct demo *demo)
       vkFreeCommandBuffers(demo->device, demo->present_cmd_pool[i], 1, &demo->graphics_to_present_cmd[i]);
       vkDestroyCommandPool(demo->device, demo->present_cmd_pool[i], NULL);
     }
-
-    vkDestroyBuffer(demo->device, demo->uniform_buffer[i], NULL);
-    vkFreeMemory(demo->device, demo->uniform_memory[i], NULL);
   }
+  vkUnmapMemory(demo->device, demo->dynamic_uniform_memory);
+  vkDestroyBuffer(demo->device, demo->dynamic_uniform_buffer, NULL);
+  vkFreeMemory(demo->device, demo->dynamic_uniform_memory, NULL);
 
   vkDestroyDescriptorPool(demo->device, demo->desc_pool, NULL);
   vkDestroyPipeline(demo->device, demo->pipeline, NULL);

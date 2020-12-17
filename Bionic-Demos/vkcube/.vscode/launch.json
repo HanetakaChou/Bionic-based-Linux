@@ -15,10 +15,10 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/obj/local/x86_64",
             "environment": [],
-            //"envFile": "${workspaceFolder}/.vscode/cppvsdbg.env",
+            "envFile": "${workspaceFolder}/.vscode/cppvsdbg.env",
             "externalConsole": false,
             "MIMode": "gdb",
-            "miDebuggerPath": "${env:HOME}/.local/libexec/android-ndk-r14b/prebuilt/linux-x86_64/bin/gdb", //either gdb from ndk or your linux distribution is OK
+            "miDebuggerPath": "${env:HOME}/.local/share/android-ndk-r14b/prebuilt/linux-x86_64/bin/gdb", //either gdb from ndk or your linux distribution is OK
             "miDebuggerArgs": "--init-command=${workspaceFolder}/libs/x86_64/gdb.setup",
             "setupCommands": [
                 {
@@ -42,7 +42,7 @@
             //"envFile": "${workspaceFolder}/.vscode/cppvsdbg.env",
             "externalConsole": false,
             "MIMode": "gdb",
-            "miDebuggerPath": "${env:HOME}/.local/libexec/android-ndk-r14b/prebuilt/linux-x86_64/bin/gdb", //either gdb from ndk or your linux distribution is OK
+            "miDebuggerPath": "${env:HOME}/.local/share/android-ndk-r14b/prebuilt/linux-x86_64/bin/gdb", //either gdb from ndk or your linux distribution is OK
             "miDebuggerArgs": "--init-command=${workspaceFolder}/libs/x86/gdb.setup",
             "setupCommands": [
                 {
