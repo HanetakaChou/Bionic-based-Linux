@@ -210,7 +210,7 @@ struct demo
   void *dynamic_uniform_data;
 
   VkDescriptorSet descriptor_set_baked;
-  VkDescriptorSet descriptor_set_update[CUBE_COUNT * FRAME_LAG];
+  VkDescriptorSet descriptor_set_material[CUBE_COUNT];
 
   VkDescriptorPool desc_pool;
 
@@ -819,43 +819,15 @@ static void demo_draw_build_cmd(struct demo *demo, VkCommandBuffer cmd_buf)
   // [RingBuffer](https://docs.microsoft.com/en-us/windows/win32/direct3d12/fence-based-resource-management) may use diffirent (number of) fences
   demo_update_data_buffer(demo);
 
-  //update descriptor
-  //hack
-  demo->texture_assets[1].sampler = demo->dds_sampler;
-  demo->texture_assets[1].view = demo->dds_view;
-
-  //update descriptor
-  //the binding state will only be fetched when issues vkCmdDraw?
-  {
-    VkDescriptorImageInfo tex_descs[2];
-    memset(&tex_descs, 0, sizeof(tex_descs));
-    VkWriteDescriptorSet writes[2];
-    memset(&writes, 0, sizeof(writes));
-
-    for (int cude_index = 0; cude_index < CUBE_COUNT; ++cude_index)
-    {
-      tex_descs[cude_index].sampler = demo->texture_assets[cude_index].sampler;
-      tex_descs[cude_index].imageView = demo->texture_assets[cude_index].view;
-      tex_descs[cude_index].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-      writes[cude_index].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-      writes[cude_index].dstBinding = 0;
-      writes[cude_index].descriptorCount = 1;
-      writes[cude_index].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-      writes[cude_index].pImageInfo = &tex_descs[cude_index];
-      writes[cude_index].dstSet = demo->descriptor_set_update[CUBE_COUNT * demo->frame_index + cude_index];
-    }
-
-    //UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDescriptorSet
-    //vkUpdateDescriptorSets makes the "DescriptorSet" previously bound by "vkCmdBindDescriptorSets" invalid
-    vkUpdateDescriptorSets(demo->device, CUBE_COUNT, writes, 0, NULL);
-  }
-
   for (int cude_index = 0; cude_index < CUBE_COUNT; ++cude_index)
   {
     //It's believed that "vkCmdBindDescriptorSets" is more efficient than "vkUpdateDescriptorSets"?
-    VkDescriptorSet descriptor_set[2] = {demo->descriptor_set_baked, demo->descriptor_set_update[CUBE_COUNT * demo->frame_index + cude_index]};
+    VkDescriptorSet descriptor_set[2] = {demo->descriptor_set_baked, demo->descriptor_set_material[cude_index]};
 
+    //UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDescriptorSet
+    //vkUpdateDescriptorSets makes the "DescriptorSet" previously bound by "vkCmdBindDescriptorSets" invalid
+    //we may the "update" as the init
+    //we are encouraged to reuse the descriptor_set
     uint32_t dynamic_offsets[1] = {limits_max_min_uniform_buffer_offset_alignment * (CUBE_COUNT * demo->frame_index + cude_index)};
     vkCmdBindDescriptorSets(
         cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, demo->pipeline_layout,
@@ -2903,18 +2875,18 @@ static void demo_prepare_descriptor_pool(struct demo *demo)
       [0] =
           {
               .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-              .descriptorCount = FRAME_LAG * 1,
+              .descriptorCount = 1,
           },
       [1] =
           {
               .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-              .descriptorCount = CUBE_COUNT * FRAME_LAG,
+              .descriptorCount = CUBE_COUNT,
           },
   };
   const VkDescriptorPoolCreateInfo descriptor_pool = {
       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
       .pNext = NULL,
-      .maxSets = 1 + CUBE_COUNT * FRAME_LAG,
+      .maxSets = 1 + CUBE_COUNT,
       .poolSizeCount = 2,
       .pPoolSizes = type_counts,
   };
@@ -2938,11 +2910,42 @@ static void demo_prepare_descriptor_set(struct demo *demo)
   err = vkAllocateDescriptorSets(demo->device, &alloc_info, &demo->descriptor_set_baked);
   assert(!err);
 
-  for (unsigned int i = 0; i < CUBE_COUNT * FRAME_LAG; i++)
+  for (unsigned int i = 0; i < CUBE_COUNT; i++)
   {
     alloc_info.pSetLayouts = &demo->desc_layout_update;
-    err = vkAllocateDescriptorSets(demo->device, &alloc_info, &demo->descriptor_set_update[i]);
+    err = vkAllocateDescriptorSets(demo->device, &alloc_info, &demo->descriptor_set_material[i]);
     assert(!err);
+  }
+
+  //update descriptor
+  //hack
+  demo->texture_assets[1].sampler = demo->dds_sampler;
+  demo->texture_assets[1].view = demo->dds_view;
+
+  //we may the "update" as the init
+  {
+    VkDescriptorImageInfo tex_descs[2];
+    memset(&tex_descs, 0, sizeof(tex_descs));
+    VkWriteDescriptorSet writes[2];
+    memset(&writes, 0, sizeof(writes));
+
+    for (int cude_index = 0; cude_index < CUBE_COUNT; ++cude_index)
+    {
+      tex_descs[cude_index].sampler = demo->texture_assets[cude_index].sampler;
+      tex_descs[cude_index].imageView = demo->texture_assets[cude_index].view;
+      tex_descs[cude_index].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+      writes[cude_index].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+      writes[cude_index].dstBinding = 0;
+      writes[cude_index].descriptorCount = 1;
+      writes[cude_index].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+      writes[cude_index].pImageInfo = &tex_descs[cude_index];
+      writes[cude_index].dstSet = demo->descriptor_set_material[cude_index];
+    }
+
+    //UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDescriptorSet
+    //vkUpdateDescriptorSets makes the "DescriptorSet" previously bound by "vkCmdBindDescriptorSets" invalid
+    vkUpdateDescriptorSets(demo->device, CUBE_COUNT, writes, 0, NULL);
   }
 }
 
