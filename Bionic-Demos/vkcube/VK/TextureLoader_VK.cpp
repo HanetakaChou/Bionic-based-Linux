@@ -448,7 +448,8 @@ struct _FormatInfo
 {
     uint32_t _union_tag;
 
-    union {
+    union
+    {
         struct
         {
             uint32_t pixelBytes;
@@ -655,7 +656,7 @@ static struct _FormatInfo const gVulkanFormatInfoTable[] = {
     {3, .compressed = {12, 12, 1, (128 / 8)}}, //VK_FORMAT_ASTC_12x12_UNORM_BLOCK    //GL_COMPRESSED_RGBA_ASTC_12x12_KHR           //
     {3, .compressed = {12, 12, 1, (128 / 8)}}  //VK_FORMAT_ASTC_12x12_SRGB_BLOCK     //GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR   //
 };
-static_assert(VK_FORMAT_RANGE_SIZE == (sizeof(gVulkanFormatInfoTable) / sizeof(gVulkanFormatInfoTable[0])), "gVulkanFormatInfoTable may not match!");
+static_assert(((VK_FORMAT_ASTC_12x12_SRGB_BLOCK - VK_FORMAT_UNDEFINED) + 1) == (sizeof(gVulkanFormatInfoTable) / sizeof(gVulkanFormatInfoTable[0])), "gVulkanFormatInfoTable may not match!");
 
 uint32_t TextureLoader_GetFormatAspectCount(VkFormat vkformat)
 {

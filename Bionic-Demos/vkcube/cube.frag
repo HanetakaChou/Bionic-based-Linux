@@ -22,7 +22,7 @@
  * Fragment shader for cube demo
  */
 
-layout(set = 0, binding = 1) highp uniform sampler2D tex;
+layout(set = 1, binding = 0) highp uniform sampler2D tex;
 
 layout(location = 0) in highp vec2 texcoord;
 

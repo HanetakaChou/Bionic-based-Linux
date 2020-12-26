@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/obj/local/x86_64/vkcube", //should set vkcube in obj here instead of the one in libs
             "args": [
-                "--validate"
+                //"--validate"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/obj/local/x86_64",

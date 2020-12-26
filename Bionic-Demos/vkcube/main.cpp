@@ -209,7 +209,8 @@ struct demo
   VkDeviceMemory dynamic_uniform_memory;
   void *dynamic_uniform_data;
 
-  VkDescriptorSet descriptor_set[FRAME_LAG];
+  VkDescriptorSet descriptor_set_baked;
+  VkDescriptorSet descriptor_set_update[CUBE_COUNT * FRAME_LAG];
 
   VkDescriptorPool desc_pool;
 
@@ -230,7 +231,8 @@ struct demo
   struct texture_object texture_assets[2];
 
   VkPipelineLayout pipeline_layout;
-  VkDescriptorSetLayout desc_layout;
+  VkDescriptorSetLayout desc_layout_baked;
+  VkDescriptorSetLayout desc_layout_update;
   VkRenderPass render_pass;
   VkPipelineCache pipelineCache;
   VkShaderModule vert_shader_module;
@@ -822,34 +824,42 @@ static void demo_draw_build_cmd(struct demo *demo, VkCommandBuffer cmd_buf)
   demo->texture_assets[1].sampler = demo->dds_sampler;
   demo->texture_assets[1].view = demo->dds_view;
 
-  for (int cude_index = 0; cude_index < CUBE_COUNT; ++cude_index)
+  //update descriptor
+  //the binding state will only be fetched when issues vkCmdDraw?
   {
-    //update descriptor
-    //the binding state will only be fetched when issues vkCmdDraw?
+    VkDescriptorImageInfo tex_descs[2];
+    memset(&tex_descs, 0, sizeof(tex_descs));
+    VkWriteDescriptorSet writes[2];
+    memset(&writes, 0, sizeof(writes));
+
+    for (int cude_index = 0; cude_index < CUBE_COUNT; ++cude_index)
     {
-      VkDescriptorImageInfo tex_descs[1];
-      memset(&tex_descs, 0, sizeof(tex_descs));
-      tex_descs[0].sampler = demo->texture_assets[cude_index].sampler;
-      tex_descs[0].imageView = demo->texture_assets[cude_index].view;
-      tex_descs[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+      tex_descs[cude_index].sampler = demo->texture_assets[cude_index].sampler;
+      tex_descs[cude_index].imageView = demo->texture_assets[cude_index].view;
+      tex_descs[cude_index].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-      VkWriteDescriptorSet writes[1];
-      memset(&writes, 0, sizeof(writes));
-      writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-      writes[0].dstBinding = 1;
-      writes[0].descriptorCount = 1;
-      writes[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-      writes[0].pImageInfo = tex_descs;
-      writes[0].dstSet = demo->descriptor_set[demo->frame_index];
-
-      vkUpdateDescriptorSets(demo->device, 1, writes, 0, NULL);
+      writes[cude_index].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+      writes[cude_index].dstBinding = 0;
+      writes[cude_index].descriptorCount = 1;
+      writes[cude_index].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+      writes[cude_index].pImageInfo = &tex_descs[cude_index];
+      writes[cude_index].dstSet = demo->descriptor_set_update[CUBE_COUNT * demo->frame_index + cude_index];
     }
 
+    //UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDescriptorSet
+    //vkUpdateDescriptorSets makes the "DescriptorSet" previously bound by "vkCmdBindDescriptorSets" invalid
+    vkUpdateDescriptorSets(demo->device, CUBE_COUNT, writes, 0, NULL);
+  }
+
+  for (int cude_index = 0; cude_index < CUBE_COUNT; ++cude_index)
+  {
     //It's believed that "vkCmdBindDescriptorSets" is more efficient than "vkUpdateDescriptorSets"?
+    VkDescriptorSet descriptor_set[2] = {demo->descriptor_set_baked, demo->descriptor_set_update[CUBE_COUNT * demo->frame_index + cude_index]};
+
     uint32_t dynamic_offsets[1] = {limits_max_min_uniform_buffer_offset_alignment * (CUBE_COUNT * demo->frame_index + cude_index)};
     vkCmdBindDescriptorSets(
         cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, demo->pipeline_layout,
-        0, 1, &demo->descriptor_set[demo->frame_index],
+        0, 2, descriptor_set,
         1, dynamic_offsets);
 
     vkCmdDraw(cmd_buf, 12 * 3, 1, 0, 0);
@@ -1147,7 +1157,7 @@ static void demo_init_vk(struct demo *demo)
   demo->enabled_layer_count = 0;
 
   char const *instance_validation_layers_alt1[] = {
-      "VK_LAYER_LUNARG_standard_validation"};
+      "VK_LAYER_KHRONOS_validation"}; //"VK_LAYER_LUNARG_standard_validation"
 
   char const *instance_validation_layers_alt2[] = {
       "VK_LAYER_GOOGLE_threading", "VK_LAYER_LUNARG_parameter_validation",
@@ -1174,7 +1184,7 @@ static void demo_init_vk(struct demo *demo)
       if (validation_found)
       {
         demo->enabled_layer_count = ARRAY_SIZE(instance_validation_layers_alt1);
-        demo->enabled_layers[0] = "VK_LAYER_LUNARG_standard_validation";
+        demo->enabled_layers[0] = instance_validation_layers_alt1[0];
         validation_layer_count = 1;
       }
       else
@@ -1293,7 +1303,7 @@ static void demo_init_vk(struct demo *demo)
     dbgCreateInfoTemp.pfnCallback = demo->use_break ? BreakCallback : dbgFunc;
     dbgCreateInfoTemp.pUserData = demo;
     dbgCreateInfoTemp.flags =
-        VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
+        VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
     inst_info.pNext = &dbgCreateInfoTemp;
   }
 
@@ -2608,34 +2618,47 @@ static void demo_prepare_fs(struct demo *demo)
 
 static void demo_prepare_descriptor_layout(struct demo *demo)
 {
-  const VkDescriptorSetLayoutBinding layout_bindings[2] = {
-      [0] =
-          {
-              .binding = 0,
-              .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-              .descriptorCount = 1,
-              .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-              .pImmutableSamplers = NULL,
-          },
-      [1] =
-          {
-              .binding = 1,
-              .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-              .descriptorCount = 1,
-              .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-              .pImmutableSamplers = NULL,
-          },
-  };
-  const VkDescriptorSetLayoutCreateInfo descriptor_layout = {
+  VkDescriptorSetLayoutBinding layout_bindings_baked[1] = {
+      {
+          .binding = 0,
+          .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+          .descriptorCount = 1,
+          .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+          .pImmutableSamplers = NULL,
+      }};
+
+  VkDescriptorSetLayoutBinding layout_bindings_update[1] = {
+      {
+          .binding = 0,
+          .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+          .descriptorCount = 1,
+          .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+          .pImmutableSamplers = NULL,
+      }};
+
+  VkDescriptorSetLayoutCreateInfo descriptor_layout_baked = {
       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
       .pNext = NULL,
-      .bindingCount = 2,
-      .pBindings = layout_bindings,
+      .bindingCount = 1,
+      .pBindings = layout_bindings_baked,
   };
+
+  VkDescriptorSetLayoutCreateInfo descriptor_layout_update = {
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+      .pNext = NULL,
+      .bindingCount = 1,
+      .pBindings = layout_bindings_update,
+  };
+
   VkResult U_ASSERT_ONLY err;
 
-  err = vkCreateDescriptorSetLayout(demo->device, &descriptor_layout, NULL, &demo->desc_layout);
+  err = vkCreateDescriptorSetLayout(demo->device, &descriptor_layout_baked, NULL, &demo->desc_layout_baked);
   assert(!err);
+
+  err = vkCreateDescriptorSetLayout(demo->device, &descriptor_layout_update, NULL, &demo->desc_layout_update);
+  assert(!err);
+
+  VkDescriptorSetLayout set_layouts[2] = {demo->desc_layout_baked, demo->desc_layout_update};
 
   assert(sizeof(vktexcube_vs_pushconstant) <= limits_min_max_push_constants_size);
   const VkPushConstantRange pushConstantRanges[1] = {VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(vktexcube_vs_pushconstant)};
@@ -2643,8 +2666,8 @@ static void demo_prepare_descriptor_layout(struct demo *demo)
       VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
       NULL,
       0,
-      1,
-      &demo->desc_layout,
+      2,
+      set_layouts,
       1,
       pushConstantRanges};
 
@@ -2885,13 +2908,13 @@ static void demo_prepare_descriptor_pool(struct demo *demo)
       [1] =
           {
               .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-              .descriptorCount = FRAME_LAG * 1,
+              .descriptorCount = CUBE_COUNT * FRAME_LAG,
           },
   };
   const VkDescriptorPoolCreateInfo descriptor_pool = {
       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
       .pNext = NULL,
-      .maxSets = FRAME_LAG,
+      .maxSets = 1 + CUBE_COUNT * FRAME_LAG,
       .poolSizeCount = 2,
       .pPoolSizes = type_counts,
   };
@@ -2909,12 +2932,16 @@ static void demo_prepare_descriptor_set(struct demo *demo)
       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
       .pNext = NULL,
       .descriptorPool = demo->desc_pool,
-      .descriptorSetCount = 1,
-      .pSetLayouts = &demo->desc_layout};
+      .descriptorSetCount = 1};
 
-  for (unsigned int i = 0; i < FRAME_LAG; i++)
+  alloc_info.pSetLayouts = &demo->desc_layout_baked;
+  err = vkAllocateDescriptorSets(demo->device, &alloc_info, &demo->descriptor_set_baked);
+  assert(!err);
+
+  for (unsigned int i = 0; i < CUBE_COUNT * FRAME_LAG; i++)
   {
-    err = vkAllocateDescriptorSets(demo->device, &alloc_info, &demo->descriptor_set[i]);
+    alloc_info.pSetLayouts = &demo->desc_layout_update;
+    err = vkAllocateDescriptorSets(demo->device, &alloc_info, &demo->descriptor_set_update[i]);
     assert(!err);
   }
 }
@@ -3068,11 +3095,10 @@ static void demo_prepare_ringbuffer(struct demo *demo)
   }
 
   //update descriptor
-  for (unsigned int i = 0; i < FRAME_LAG; i++)
   {
     VkDescriptorBufferInfo buffer_info;
     buffer_info.offset = 0;
-    buffer_info.range = limits_max_min_uniform_buffer_offset_alignment * CUBE_COUNT * FRAME_LAG;
+    buffer_info.range = sizeof(struct vktexcube_vs_uniform); //the range means the size actually used by the shader //dynamic offset + offset not overstep the size of buffer
     buffer_info.buffer = demo->dynamic_uniform_buffer;
 
     VkWriteDescriptorSet writes[1];
@@ -3081,7 +3107,7 @@ static void demo_prepare_ringbuffer(struct demo *demo)
     writes[0].descriptorCount = 1;
     writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     writes[0].pBufferInfo = &buffer_info;
-    writes[0].dstSet = demo->descriptor_set[i];
+    writes[0].dstSet = demo->descriptor_set_baked;
 
     vkUpdateDescriptorSets(demo->device, 1, writes, 0, NULL);
   }
@@ -3471,7 +3497,8 @@ static void demo_cleanup(struct demo *demo)
   vkDestroyPipelineCache(demo->device, demo->pipelineCache, NULL);
   vkDestroyRenderPass(demo->device, demo->render_pass, NULL);
   vkDestroyPipelineLayout(demo->device, demo->pipeline_layout, NULL);
-  vkDestroyDescriptorSetLayout(demo->device, demo->desc_layout, NULL);
+  vkDestroyDescriptorSetLayout(demo->device, demo->desc_layout_update, NULL);
+  vkDestroyDescriptorSetLayout(demo->device, demo->desc_layout_baked, NULL);
 
   vkDestroyImageView(demo->device, demo->texture_assets[0].view, NULL);
   vkDestroyImage(demo->device, demo->texture_assets[0].image, NULL);
@@ -3503,6 +3530,7 @@ static void demo_cleanup(struct demo *demo)
 
 #include <errno.h>
 #include <string.h>
+#include <sys/signal.h>
 
 static void demo_load_pipeline_cache(struct demo *demo)
 {
