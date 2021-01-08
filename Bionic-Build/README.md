@@ -152,7 +152,7 @@ export PATH="$HOME/bionic-toolchain-$target_arch/bin"${PATH:+:${PATH}}
 
 # pkg-config ### https://autotools.io/pkgconfig/cross-compiling.html  
 target_sysroot="$HOME/bionic-toolchain-$target_arch/sysroot"
-export PKG_CONFIG_PATH=
+export PKG_CONFIG_PATH=${target_sysroot}/usr/lib/pkgconfig:${target_sysroot}/usr/share/pkgconfig
 export PKG_CONFIG_LIBDIR=${target_sysroot}/usr/lib/pkgconfig:${target_sysroot}/usr/share/pkgconfig
 export PKG_CONFIG_SYSROOT_DIR=${target_sysroot}
 
