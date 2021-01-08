@@ -230,6 +230,9 @@ add the llvm-config to \$PATH
 export PATH="$HOME/bionic-toolchain-$target_arch/sysroot/usr/bin"${PATH:+:${PATH}} 
 ```
 
+add llvm-config = 'llvm-config' to cross_file.txt
+
+
 ### 2\. configure the meson options, we only build the vulkan drivers and the zlink-base GL drivers
 in meson_options.txt
 ```
