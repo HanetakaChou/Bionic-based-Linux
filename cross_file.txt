@@ -6,6 +6,7 @@ cpp = 'i686-linux-android-clang++'
 ld = 'i686-linux-android-ld'
 strip = 'i686-linux-android-strip'
 pkgconfig = 'pkg-config'
+llvm-config = 'llvm-config'
 
 [properties]
 c_args = ['-fPIE', '-fPIC', '-U__ANDROID__', '-UANDROID', '-D__BIONIC__=1']
