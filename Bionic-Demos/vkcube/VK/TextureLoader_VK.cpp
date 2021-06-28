@@ -59,6 +59,7 @@ static inline T roundUp(const T value, const T2 alignment)
 
 size_t TextureLoader_GetCopyableFootprints(struct TextureLoader_SpecificHeader const *vk_texture_header,
                                            VkDeviceSize optimalBufferCopyOffsetAlignment, VkDeviceSize optimalBufferCopyRowPitchAlignment,
+                                           size_t baseOffset,
                                            uint32_t NumSubresources, struct TextureLoader_MemcpyDest *pDest, VkBufferImageCopy *pRegions)
 {
     // Context::texSubImage2D libANGLE/Context.cpp
@@ -71,7 +72,7 @@ size_t TextureLoader_GetCopyableFootprints(struct TextureLoader_SpecificHeader c
 
     uint32_t aspectCount = TextureLoader_GetFormatAspectCount(vk_texture_header->format);
 
-    size_t stagingOffset = 0;
+    size_t stagingOffset = baseOffset;
     size_t TotalBytes = 0;
 
     for (uint32_t aspectIndex = 0; aspectIndex < aspectCount; ++aspectIndex)

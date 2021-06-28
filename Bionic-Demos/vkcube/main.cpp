@@ -1878,15 +1878,23 @@ static void demo_loadTexture_DDS(struct demo *demo)
 
   uint32_t NumSubresource = TextureLoader_GetFormatAspectCount(vkheader.format) * vkheader.arrayLayers * vkheader.mipLevels;
 
+  uint8_t *ptr_tmp;
+  VkDeviceSize offset_tmp;
+  demo->mStagingBuffer.allocate(37, 1, &ptr_tmp, &offset_tmp);
+
+  size_t base_offset = offset_tmp + 37;
+
   struct TextureLoader_MemcpyDest dest[15];
   struct VkBufferImageCopy regions[15];
   size_t TotalSize = TextureLoader_GetCopyableFootprints(&vkheader,
                                                          demo->gpu_props.limits.optimalBufferCopyOffsetAlignment, demo->gpu_props.limits.optimalBufferCopyRowPitchAlignment,
+                                                         base_offset,
                                                          NumSubresource, dest, regions);
 
   uint8_t *ptr;
   VkDeviceSize offset;
-  demo->mStagingBuffer.allocate(TotalSize, demo->gpu_props.limits.optimalBufferCopyOffsetAlignment, &ptr, &offset);
+  demo->mStagingBuffer.allocate(TotalSize, 1, &ptr, &offset);
+  assert(offset == base_offset);
 
   //for (int i = 0; i < NumSubresource; ++i)
   //{
