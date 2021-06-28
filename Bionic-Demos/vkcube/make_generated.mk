@@ -1,4 +1,4 @@
-all: generated/cube.vert.inc generated/cube.frag.inc generated/lunarg.ppm.h generated/ll_hires-ASTC.pvr.h
+all: generated/cube.vert.inc generated/cube.frag.inc generated/lunarg.ppm.h generated/lenna.h
 	
 generated/cube.vert.inc : cube.vert
 	glslangValidator -V cube.vert -x -o generated/cube.vert.inc
@@ -9,7 +9,7 @@ generated/cube.frag.inc : cube.frag
 generated/lunarg.ppm.h : lunarg.ppm
 	../include-bin/bin64/include-bin lunarg.ppm generated/lunarg.ppm.h
 
-generated/ll_hires-ASTC.pvr.h : ../Assets/Lenna/l_hires-DirectXTex.dds
-	../include-bin/bin64/include-bin ../Assets/Lenna/l_hires-DirectXTex.dds generated/ll_hires-ASTC.pvr.h
+generated/lenna.h : ../Assets/Lenna/l_hires-DirectXTex.dds
+	../include-bin/bin64/include-bin ../Assets/Lenna/l_hires-DirectXTex.dds generated/lenna.h
 
 

@@ -1858,8 +1858,8 @@ static void demo_cleanupTexture_DDS(struct demo *demo)
   vkDestroySampler(demo->device, demo->dds_sampler, NULL);
 }
 
-extern unsigned char *_pvr_asset;
-extern unsigned int _pvr_asset_len;
+extern unsigned char *_lenna_asset;
+extern unsigned int _lenna_asset_len;
 
 #include "TextureLoader.h"
 #include "VK/TextureLoader_VK.h"
@@ -1868,7 +1868,7 @@ static void demo_loadTexture_DDS(struct demo *demo)
 
   struct TextureLoader_NeutralHeader header;
   size_t header_offset = 0;
-  TextureLoader_LoadHeaderFromMemory(_pvr_asset, _pvr_asset_len, &header, &header_offset);
+  TextureLoader_LoadHeaderFromMemory(_lenna_asset, _lenna_asset_len, &header, &header_offset);
 
   struct TextureLoader_SpecificHeader vkheader = TextureLoader_ToSpecificHeader(&header);
 
@@ -1898,7 +1898,7 @@ static void demo_loadTexture_DDS(struct demo *demo)
     regions[i].bufferOffset += offset;
   }
 
-  TextureLoader_FillDataFromMemory(_pvr_asset, _pvr_asset_len, ptr, NumSubresource, dest, &header, &header_offset);
+  TextureLoader_FillDataFromMemory(_lenna_asset, _lenna_asset_len, ptr, NumSubresource, dest, &header, &header_offset);
 
   VkResult U_ASSERT_ONLY err;
   bool U_ASSERT_ONLY pass;
