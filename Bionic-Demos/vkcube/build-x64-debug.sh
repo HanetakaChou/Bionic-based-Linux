@@ -1,28 +1,11 @@
 #!/bin/bash
 
-cd "$(dirname "$(readlink -f "${0}")")"
- 
-target_name="vkcube"
-int_dir="obj/local/x86_64"
+MY_DIR="$(cd "$(dirname "$0")" 1>/dev/null 2>/dev/null && pwd)"  
+cd ${MY_DIR}
 
-rm -rf generated
+# generated
 mkdir -p generated
-
-# glslang
-/system/bin64/glslangValidator -V cube.vert -x -o generated/cube.vert.inc
-/system/bin64/glslangValidator -V cube.frag -x -o generated/cube.frag.inc
-
-# include-bin
-../include-bin/bin64/include-bin lunarg.ppm generated/lunarg.ppm.h
-../include-bin/bin64/include-bin ../Assets/Lenna/l_hires-DirectXTex.dds generated/ll_hires-ASTC.pvr.h
+make -f make_generated.mk
 
 # build by ndk
-rm -f ${int_dir}/${target_name}
-ndk-build APP_DEBUG:=true APP_ABI:=x86_64 NDK_PROJECT_PATH:=null NDK_OUT:=obj NDK_LIBS_OUT:=libs NDK_APPLICATION_MK:=Application.mk APP_BUILD_SCRIPT:=LinuxX11.mk 
-
-# before execute change the rpath to \$ORIGIN    
-chrpath -r '$ORIGIN' ${int_dir}/${target_name}
-
-# stdc++
-rm -rf ${int_dir}/libstdc++.so 
-ln -s libc++_shared.so ${int_dir}/libstdc++.so 
+${MY_DIR}/ndk_build_glibc/ndk-build APP_DEBUG:=true APP_ABI:=x86_64 NDK_PROJECT_PATH:=null NDK_OUT:=obj NDK_LIBS_OUT:=libs NDK_APPLICATION_MK:=Application.mk APP_BUILD_SCRIPT:=LinuxX11.mk 

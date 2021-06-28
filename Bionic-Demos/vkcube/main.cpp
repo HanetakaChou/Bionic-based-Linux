@@ -776,10 +776,12 @@ static void demo_draw_build_cmd(struct demo *demo, VkCommandBuffer cmd_buf)
       VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
       NULL,
   };
+
   const VkClearValue clear_values[2] = {
-      [0] = {.color.float32 = {0.2f, 0.2f, 0.2f, 0.2f}},
-      [1] = {.depthStencil = {1.0f, 0}},
+      [0] = {{0.2f, 0.2f, 0.2f, 0.2f}},
+      [1] = {{1.0f, 0}},
   };
+
   const VkRenderPassBeginInfo rp_begin = {
       VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
       NULL,
@@ -919,7 +921,7 @@ static void demo_init(struct demo *demo, int argc, char **argv)
   {
     if (strcmp(argv[i], "--use_staging") == 0)
     {
-      fprintf(stderr, "--use_staging is deprecated and no longer does anything \n");
+      printf("--use_staging is deprecated and no longer does anything \n");
       continue;
     }
     if ((strcmp(argv[i], "--present_mode") == 0) && (i < argc - 1))
@@ -940,7 +942,7 @@ static void demo_init(struct demo *demo, int argc, char **argv)
     }
     if (strcmp(argv[i], "--xlib") == 0)
     {
-      fprintf(stderr, "--xlib is deprecated and no longer does anything \n");
+      printf("--xlib is deprecated and no longer does anything \n");
       continue;
     }
     if (strcmp(argv[i], "--c") == 0 && demo->frameCount == UINT32_MAX && i < argc - 1 && sscanf(argv[i + 1], "%" SCNu32, &demo->frameCount) == 1)
@@ -954,8 +956,7 @@ static void demo_init(struct demo *demo, int argc, char **argv)
       continue;
     }
 
-    fprintf(stderr,
-            "Usage:\n  %s [--use_staging] [--validate] "
+    printf( "Usage:\n  %s [--use_staging] [--validate] "
             "       [--break] [--c <framecount>] [--suppress_popups]\n"
             "       [--present_mode {0,1,2,3}]\n"
             "\n"
@@ -967,7 +968,6 @@ static void demo_init(struct demo *demo, int argc, char **argv)
             APP_SHORT_NAME, VK_PRESENT_MODE_IMMEDIATE_KHR,
             VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_FIFO_KHR,
             VK_PRESENT_MODE_FIFO_RELAXED_KHR);
-    fflush(stderr);
     exit(1);
   }
 
@@ -997,7 +997,6 @@ static void demo_init_connection(struct demo *demo)
   {
     printf("Cannot find a compatible Vulkan installable client driver "
            "(ICD).\nExiting ...\n");
-    fflush(stdout);
     exit(1);
   }
 
@@ -1085,7 +1084,7 @@ static VkBool32 demo_check_layers(uint32_t check_count, char const **check_names
     }
     if (!found)
     {
-      fprintf(stderr, "Cannot find layer: %s\n", check_names[i]);
+      printf("Cannot find layer: %s\n", check_names[i]);
       return 0;
     }
   }
@@ -1764,20 +1763,19 @@ static void demo_prepare_textures(struct demo *demo, VkCommandBuffer tmp_cmd)
   };
 
   VkImageViewCreateInfo view = {
-      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-      .pNext = NULL,
-      .image = VK_NULL_HANDLE,
-      .viewType = VK_IMAGE_VIEW_TYPE_2D,
-      .format = tex_format,
-      .components =
-          {
-              VK_COMPONENT_SWIZZLE_R,
-              VK_COMPONENT_SWIZZLE_G,
-              VK_COMPONENT_SWIZZLE_B,
-              VK_COMPONENT_SWIZZLE_A,
-          },
-      .subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
-      .flags = 0,
+      VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+      NULL,
+      0,
+      VK_NULL_HANDLE,
+      VK_IMAGE_VIEW_TYPE_2D,
+      tex_format,
+      {
+          VK_COMPONENT_SWIZZLE_R,
+          VK_COMPONENT_SWIZZLE_G,
+          VK_COMPONENT_SWIZZLE_B,
+          VK_COMPONENT_SWIZZLE_A,
+      },
+      {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
   };
 
   /* create sampler */
@@ -2058,21 +2056,19 @@ static void demo_loadTexture_DDS(struct demo *demo)
   // create image view
 
   VkImageViewCreateInfo view = {
-      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-      .pNext = NULL,
-      .image = VK_NULL_HANDLE,
-      .viewType = VK_IMAGE_VIEW_TYPE_2D,
-      .format = vkheader.format,
-      .components =
-          {
-              VK_COMPONENT_SWIZZLE_R,
-              VK_COMPONENT_SWIZZLE_G,
-              VK_COMPONENT_SWIZZLE_B,
-              VK_COMPONENT_SWIZZLE_A,
-          },
-      .subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, vkheader.mipLevels, 0, 1},
-      .flags = 0,
-  };
+      VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+      NULL,
+      0,
+      VK_NULL_HANDLE,
+      VK_IMAGE_VIEW_TYPE_2D,
+      vkheader.format,
+      {
+          VK_COMPONENT_SWIZZLE_R,
+          VK_COMPONENT_SWIZZLE_G,
+          VK_COMPONENT_SWIZZLE_B,
+          VK_COMPONENT_SWIZZLE_A,
+      },
+      {VK_IMAGE_ASPECT_COLOR_BIT, 0, vkheader.mipLevels, 0, 1}};
 
   view.image = demo->dds_image;
   err = vkCreateImageView(demo->device, &view, NULL, &demo->dds_view);
@@ -2198,7 +2194,7 @@ static void demo_prepare_texture_staging_buffer(struct demo *demo, struct stagin
   uint8_t *rgba_data = static_cast<uint8_t *>(data);
   if (!loadTexture_PPM(rgba_data, &outputRowPitch, &tex_width, &tex_height))
   {
-    fprintf(stderr, "Error loading texture \n");
+    printf("Error loading texture \n");
   }
 
   vkUnmapMemory(demo->device, demo->staging_buffer.mem);
@@ -2660,63 +2656,69 @@ static void demo_prepare_render_pass(struct demo *demo)
   // color attachment's layout will be transitioned to LAYOUT_PRESENT_SRC_KHR to
   // be ready to present.  This is all done as part of the renderpass, no
   // barriers are necessary.
+
   const VkAttachmentDescription attachments[2] = {
       [0] =
           {
-              .format = demo->format,
-              .flags = 0,
-              .samples = VK_SAMPLE_COUNT_1_BIT,
-              .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-              .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-              .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-              .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-              .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-              .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+              0,
+              demo->format,
+              VK_SAMPLE_COUNT_1_BIT,
+              VK_ATTACHMENT_LOAD_OP_CLEAR,
+              VK_ATTACHMENT_STORE_OP_STORE,
+              VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+              VK_ATTACHMENT_STORE_OP_DONT_CARE,
+              VK_IMAGE_LAYOUT_UNDEFINED,
+              VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
           },
       [1] =
           {
-              .format = demo->depth.format,
-              .flags = 0,
-              .samples = VK_SAMPLE_COUNT_1_BIT,
-              .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-              .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-              .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-              .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-              .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-              .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+              0,
+              demo->depth.format,
+              VK_SAMPLE_COUNT_1_BIT,
+              VK_ATTACHMENT_LOAD_OP_CLEAR,
+              VK_ATTACHMENT_STORE_OP_DONT_CARE,
+              VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+              VK_ATTACHMENT_STORE_OP_DONT_CARE,
+              VK_IMAGE_LAYOUT_UNDEFINED,
+              VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
           },
   };
+
   const VkAttachmentReference color_reference = {
-      .attachment = 0,
-      .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+      0,
+      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
   };
+
   const VkAttachmentReference depth_reference = {
-      .attachment = 1,
-      .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+      1,
+      VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
   };
+
   const VkSubpassDescription subpass = {
-      .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-      .flags = 0,
-      .inputAttachmentCount = 0,
-      .pInputAttachments = NULL,
-      .colorAttachmentCount = 1,
-      .pColorAttachments = &color_reference,
-      .pResolveAttachments = NULL,
-      .pDepthStencilAttachment = &depth_reference,
-      .preserveAttachmentCount = 0,
-      .pPreserveAttachments = NULL,
+      0,
+      VK_PIPELINE_BIND_POINT_GRAPHICS,
+      0,
+      NULL,
+      1,
+      &color_reference,
+      NULL,
+      &depth_reference,
+      0,
+      NULL,
   };
+
   const VkRenderPassCreateInfo rp_info = {
-      .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-      .pNext = NULL,
-      .flags = 0,
-      .attachmentCount = 2,
-      .pAttachments = attachments,
-      .subpassCount = 1,
-      .pSubpasses = &subpass,
-      .dependencyCount = 0,
-      .pDependencies = NULL,
+      VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+      NULL,
+      0,
+      2,
+      attachments,
+      1,
+      &subpass,
+      0,
+      NULL,
   };
+
   VkResult U_ASSERT_ONLY err;
 
   err = vkCreateRenderPass(demo->device, &rp_info, NULL, &demo->render_pass);
@@ -2955,21 +2957,22 @@ static void demo_prepare(struct demo *demo)
 
   for (uint32_t i = 0; i < FRAME_LAG; i++)
   {
+
     const VkCommandPoolCreateInfo cmd_pool_info = {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-        .pNext = NULL,
-        .queueFamilyIndex = demo->graphics_queue_family_index,
-        .flags = 0,
+        VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        NULL,
+        0,
+        demo->graphics_queue_family_index,
     };
     err = vkCreateCommandPool(demo->device, &cmd_pool_info, NULL, &demo->cmd_pool[i]);
     assert(!err);
 
     const VkCommandBufferAllocateInfo cmd_info = {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-        .pNext = NULL,
-        .commandPool = demo->cmd_pool[i],
-        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-        .commandBufferCount = 1,
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        NULL,
+        demo->cmd_pool[i],
+        VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        1,
     };
     err = vkAllocateCommandBuffers(demo->device, &cmd_info, &demo->cmd[i]);
     assert(!err);
@@ -2977,10 +2980,10 @@ static void demo_prepare(struct demo *demo)
     if (demo->separate_present_queue)
     {
       const VkCommandPoolCreateInfo present_cmd_pool_info = {
-          .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-          .pNext = NULL,
-          .queueFamilyIndex = demo->present_queue_family_index,
-          .flags = 0,
+          VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+          NULL,
+          0,
+          demo->present_queue_family_index,
       };
       err = vkCreateCommandPool(demo->device, &present_cmd_pool_info, NULL, &demo->present_cmd_pool[i]);
       assert(!err);
@@ -3627,7 +3630,7 @@ static void demo_store_pipeline_cache(struct demo *demo)
       }
       else
       {
-        fprintf(stderr, "Cannot use %s for vulkan-pipeline-cache (not a directory) --- Remove it!\n", path);
+        printf("Cannot use %s for vulkan-pipeline-cache (not a directory) --- Remove it!\n", path);
         int ret = unlinkat(AT_FDCWD, path, 0);
         assert(0 == ret);
         mkdir_needed = true;
@@ -3705,7 +3708,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL dbgFunc(VkFlags msgFlags,
     }
 
     printf("%s\n", message);
-    fflush(stdout);
 
     free(message);
 
@@ -3724,6 +3726,5 @@ VKAPI_ATTR VkBool32 VKAPI_CALL dbgFunc(VkFlags msgFlags,
 void ERR_EXIT(char const *err_msg, char const *err_class)
 {
   printf("%s\n", err_msg);
-  fflush(stdout);
   exit(1);
 }
