@@ -1891,22 +1891,14 @@ static void demo_loadTexture_DDS(struct demo *demo)
                                                          base_offset,
                                                          NumSubresource, dest, regions);
 
-  uint8_t *ptr;
-  VkDeviceSize offset;
-  demo->mStagingBuffer.allocate(TotalSize, 1, &ptr, &offset);
-  assert(offset == base_offset);
-
-  //for (int i = 0; i < NumSubresource; ++i)
-  //{
-  //  dest[i].stagingOffset += offset;
-  //}
-
-  for (int i = 0; i < NumSubresource; ++i)
   {
-    regions[i].bufferOffset += offset;
+    uint8_t *ptr;
+    VkDeviceSize offset;
+    demo->mStagingBuffer.allocate(TotalSize, 1, &ptr, &offset);
+    assert(offset == base_offset);
   }
 
-  TextureLoader_FillDataFromMemory(_lenna_asset, _lenna_asset_len, ptr, NumSubresource, dest, &header, &header_offset);
+  TextureLoader_FillDataFromMemory(_lenna_asset, _lenna_asset_len, demo->mStagingBuffer.m_StagingPointer, NumSubresource, dest, &header, &header_offset);
 
   VkResult U_ASSERT_ONLY err;
   bool U_ASSERT_ONLY pass;

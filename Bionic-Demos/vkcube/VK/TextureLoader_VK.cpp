@@ -72,8 +72,8 @@ size_t TextureLoader_GetCopyableFootprints(struct TextureLoader_SpecificHeader c
 
     uint32_t aspectCount = TextureLoader_GetFormatAspectCount(vk_texture_header->format);
 
-    size_t stagingOffset = baseOffset;
-    size_t TotalBytes = 0;
+    size_t stagingOffset = roundUp(baseOffset, optimalBufferCopyOffsetAlignment);
+    size_t TotalBytes = (stagingOffset - baseOffset);
 
     for (uint32_t aspectIndex = 0; aspectIndex < aspectCount; ++aspectIndex)
     {

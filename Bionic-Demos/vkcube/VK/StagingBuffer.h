@@ -12,9 +12,10 @@ class StagingBuffer
     size_t mSize;
     size_t mNextAllocationOffset;
     size_t mLastFlushOrInvalidateOffset;
-    uint8_t *m_StagingPointer;
 
 public:
+    uint8_t *m_StagingPointer;
+
     inline StagingBuffer() : m_buffer(VK_NULL_HANDLE), m_mem(VK_NULL_HANDLE), m_StagingPointer(NULL)
     {
     }
