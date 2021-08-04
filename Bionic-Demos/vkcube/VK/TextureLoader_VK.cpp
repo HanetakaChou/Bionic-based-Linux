@@ -72,8 +72,8 @@ size_t TextureLoader_GetCopyableFootprints(struct TextureLoader_SpecificHeader c
 
     uint32_t aspectCount = TextureLoader_GetFormatAspectCount(vk_texture_header->format);
 
-    size_t stagingOffset = roundUp(baseOffset, optimalBufferCopyOffsetAlignment);
-    size_t TotalBytes = (stagingOffset - baseOffset);
+    size_t stagingOffset = baseOffset;
+    size_t TotalBytes = 0U;
 
     for (uint32_t aspectIndex = 0; aspectIndex < aspectCount; ++aspectIndex)
     {
@@ -92,8 +92,6 @@ size_t TextureLoader_GetCopyableFootprints(struct TextureLoader_SpecificHeader c
 
                 uint32_t bufferRowLength;
                 uint32_t bufferImageHeight;
-
-                size_t allocationSize;
 
                 if (_IsFormatCompressed(vk_texture_header->format))
                 {
@@ -136,8 +134,6 @@ size_t TextureLoader_GetCopyableFootprints(struct TextureLoader_SpecificHeader c
 
                     //bufferRowLength = roundUp(vk_texture_header->extent.width, _GetCompressedFormatBlockWidth(vk_texture_header->format));
                     //bufferImageHeight = roundUp(vk_texture_header->extent.height, _GetCompressedFormatBlockHeight(vk_texture_header->format));
-
-                    allocationSize = roundUp(outputSlicePitch * outputNumSlices, optimalBufferCopyOffsetAlignment);
                 }
                 else if (_IsFormatRGBA(vk_texture_header->format))
                 {
@@ -151,8 +147,6 @@ size_t TextureLoader_GetCopyableFootprints(struct TextureLoader_SpecificHeader c
 
                     bufferRowLength = outputRowPitch / _GetRGBAFormatPixelBytes(vk_texture_header->format);
                     bufferImageHeight = outputNumRows;
-
-                    allocationSize = roundUp(outputSlicePitch * outputNumSlices, optimalBufferCopyOffsetAlignment);
                 }
                 else
                 {
@@ -166,9 +160,11 @@ size_t TextureLoader_GetCopyableFootprints(struct TextureLoader_SpecificHeader c
 
                     bufferRowLength = outputRowPitch / _GetDepthStencilFormatPixelBytes(vk_texture_header->format, aspectIndex);
                     bufferImageHeight = outputNumRows;
-
-                    allocationSize = roundUp(outputSlicePitch * outputNumSlices, optimalBufferCopyOffsetAlignment);
                 }
+
+                size_t stagingOffset_new = roundUp(roundUp(stagingOffset, optimalBufferCopyOffsetAlignment), optimalBufferCopyRowPitchAlignment);
+                TotalBytes += (stagingOffset_new - stagingOffset);
+                stagingOffset = stagingOffset_new;
 
                 uint32_t DstSubresource = TextureLoader_CalcSubresource(mipLevel, arrayLayer, aspectIndex, vk_texture_header->mipLevels, vk_texture_header->arrayLayers);
                 assert(DstSubresource < NumSubresources);
@@ -196,8 +192,9 @@ size_t TextureLoader_GetCopyableFootprints(struct TextureLoader_SpecificHeader c
                 pRegions[DstSubresource].imageExtent.height = h;
                 pRegions[DstSubresource].imageExtent.depth = d;
 
-                stagingOffset += allocationSize;
-                TotalBytes += allocationSize;
+                size_t surfaceSize = (outputSlicePitch * outputNumSlices);
+                stagingOffset += surfaceSize;
+                TotalBytes += surfaceSize;
 
                 w = w >> 1;
                 h = h >> 1;
