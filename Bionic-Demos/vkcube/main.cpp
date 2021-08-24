@@ -54,7 +54,7 @@
  */
 struct texture_object
 {
-  VkSampler sampler;
+  //VkSampler sampler;
 
   VkImage image;
   VkImageLayout imageLayout;
@@ -186,8 +186,10 @@ struct demo
 
   VkImage dds_image;
   VkDeviceMemory dds_mem;
-  VkSampler dds_sampler;
+  //VkSampler dds_sampler;
   VkImageView dds_view;
+
+  VkSampler immutable_sampler;
 
   // frame_index related
 
@@ -1743,25 +1745,6 @@ static void demo_prepare_textures(struct demo *demo, VkCommandBuffer tmp_cmd)
     assert(!"No support for R8G8B8A8_UNORM as texture image format");
   }
 
-  const VkSamplerCreateInfo sampler = {
-      .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-      .pNext = NULL,
-      .magFilter = VK_FILTER_NEAREST,
-      .minFilter = VK_FILTER_NEAREST,
-      .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
-      .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-      .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-      .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-      .mipLodBias = 0.0f,
-      .anisotropyEnable = VK_FALSE,
-      .maxAnisotropy = 1,
-      .compareOp = VK_COMPARE_OP_NEVER,
-      .minLod = 0.0f,
-      .maxLod = 0.0f,
-      .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE,
-      .unnormalizedCoordinates = VK_FALSE,
-  };
-
   VkImageViewCreateInfo view = {
       VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
       NULL,
@@ -1777,10 +1760,6 @@ static void demo_prepare_textures(struct demo *demo, VkCommandBuffer tmp_cmd)
       },
       {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
   };
-
-  /* create sampler */
-  err = vkCreateSampler(demo->device, &sampler, NULL, &demo->texture_assets[0].sampler);
-  assert(!err);
 
   /* create image view */
   view.image = demo->texture_assets[0].image;
@@ -1855,7 +1834,6 @@ static void demo_cleanupTexture_DDS(struct demo *demo)
   vkDestroyImageView(demo->device, demo->dds_view, NULL);
   vkDestroyImage(demo->device, demo->dds_image, NULL);
   vkFreeMemory(demo->device, demo->dds_mem, NULL);
-  vkDestroySampler(demo->device, demo->dds_sampler, NULL);
 }
 
 extern unsigned char *_lenna_asset;
@@ -2029,28 +2007,6 @@ static void demo_loadTexture_DDS(struct demo *demo)
                               NULL};
 
   err = vkQueueSubmit(demo->graphics_queue, 1, &submit_info, fence);
-  assert(!err);
-
-  // create sampler
-  const VkSamplerCreateInfo sampler = {
-      .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-      .pNext = NULL,
-      .magFilter = VK_FILTER_NEAREST,
-      .minFilter = VK_FILTER_NEAREST,
-      .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
-      .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-      .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-      .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-      .mipLodBias = 0.0f,
-      .anisotropyEnable = VK_FALSE,
-      .maxAnisotropy = 1,
-      .compareOp = VK_COMPARE_OP_NEVER,
-      .minLod = 0.0f,
-      .maxLod = 0.0f,
-      .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE,
-      .unnormalizedCoordinates = VK_FALSE,
-  };
-  err = vkCreateSampler(demo->device, &sampler, NULL, &demo->dds_sampler);
   assert(!err);
 
   // create image view
@@ -2586,6 +2542,32 @@ static void demo_prepare_fs(struct demo *demo)
 
 static void demo_prepare_descriptor_layout(struct demo *demo)
 {
+  VkResult U_ASSERT_ONLY err;
+
+  // create sampler
+  {
+    const VkSamplerCreateInfo sampler = {
+        .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+        .pNext = NULL,
+        .magFilter = VK_FILTER_LINEAR,
+        .minFilter = VK_FILTER_LINEAR,
+        .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .mipLodBias = 0.0f,
+        .anisotropyEnable = VK_FALSE,
+        .maxAnisotropy = 1,
+        .compareOp = VK_COMPARE_OP_NEVER,
+        .minLod = 0.0f,
+        .maxLod = VK_COMPARE_OP_NEVER,
+        .borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK,
+        .unnormalizedCoordinates = VK_FALSE,
+    };
+    err = vkCreateSampler(demo->device, &sampler, NULL, &demo->immutable_sampler);
+    assert(!err);
+  }
+
   VkDescriptorSetLayoutBinding layout_bindings_baked[1] = {
       {
           .binding = 0,
@@ -2601,7 +2583,7 @@ static void demo_prepare_descriptor_layout(struct demo *demo)
           .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
           .descriptorCount = 1,
           .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-          .pImmutableSamplers = NULL,
+          .pImmutableSamplers = &demo->immutable_sampler,
       }};
 
   VkDescriptorSetLayoutCreateInfo descriptor_layout_baked = {
@@ -2617,8 +2599,6 @@ static void demo_prepare_descriptor_layout(struct demo *demo)
       .bindingCount = 1,
       .pBindings = layout_bindings_update,
   };
-
-  VkResult U_ASSERT_ONLY err;
 
   err = vkCreateDescriptorSetLayout(demo->device, &descriptor_layout_baked, NULL, &demo->desc_layout_baked);
   assert(!err);
@@ -2921,7 +2901,6 @@ static void demo_prepare_descriptor_set(struct demo *demo)
 
   //update descriptor
   //hack
-  demo->texture_assets[1].sampler = demo->dds_sampler;
   demo->texture_assets[1].view = demo->dds_view;
 
   //we may the "update" as the init
@@ -2933,7 +2912,7 @@ static void demo_prepare_descriptor_set(struct demo *demo)
 
     for (int cude_index = 0; cude_index < CUBE_COUNT; ++cude_index)
     {
-      tex_descs[cude_index].sampler = demo->texture_assets[cude_index].sampler;
+      tex_descs[cude_index].sampler = VK_NULL_HANDLE;
       tex_descs[cude_index].imageView = demo->texture_assets[cude_index].view;
       tex_descs[cude_index].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
@@ -3509,7 +3488,7 @@ static void demo_cleanup(struct demo *demo)
   vkDestroyImageView(demo->device, demo->texture_assets[0].view, NULL);
   vkDestroyImage(demo->device, demo->texture_assets[0].image, NULL);
   vkFreeMemory(demo->device, demo->texture_assets[0].mem, NULL);
-  vkDestroySampler(demo->device, demo->texture_assets[0].sampler, NULL);
+  vkDestroySampler(demo->device, demo->immutable_sampler, NULL);
 
   vkDestroyBuffer(demo->device, demo->vertex_buffer_addition[0], NULL);
   vkDestroyBuffer(demo->device, demo->vertex_buffer[0], NULL);
